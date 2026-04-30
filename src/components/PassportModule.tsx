@@ -6,7 +6,11 @@ import { GoogleGenAI } from '@google/genai';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const getApiKey = () => {
+  return (import.meta as any).env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 // Small helper to compress image before AI call
 async function compressImage(base64Str: string, maxWidth = 1024): Promise<string> {
@@ -48,8 +52,8 @@ export default function PassportModule() {
   const [shirtPattern, setShirtPattern] = useState<'solid' | 'check'>('solid');
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (!process.env.GEMINI_API_KEY) {
-      alert('GEMINI_API_KEY is not configured in the environment.');
+    if (!getApiKey()) {
+      alert('GEMINI_API_KEY is not configured in the environment. Please add VITE_GEMINI_API_KEY to your deployment environment variables.');
     }
     const file = acceptedFiles[0];
     if (file) {
