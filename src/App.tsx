@@ -5,13 +5,12 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Camera, FileText, Image as ImageIcon, CreditCard, Github, Cpu, Scissors, UserCircle, Menu, X, Maximize2 } from 'lucide-react';
+import { Camera, FileText, Image as ImageIcon, CreditCard, Github, Cpu, Scissors, UserCircle, Menu, X, Bug } from 'lucide-react';
 import PassportModule from './components/PassportModule';
 import NIDModule from './components/NIDModule';
-import ImagePreviewer from './components/ImagePreviewer';
 import { cn } from './lib/utils';
 
-type Module = 'passport' | 'nid' | 'previewer';
+type Module = 'passport' | 'nid';
 
 export default function App() {
   const [activeModule, setActiveModule] = useState<Module>('passport');
@@ -70,30 +69,21 @@ export default function App() {
               icon={<CreditCard className="w-5 h-5" />}
               label="NID Formatter"
             />
+          </div>
+
+          <div className="pt-2">
+            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-3 px-2">Support</div>
             <NavBtn 
-              active={activeModule === 'previewer'} 
+              active={false} 
               onClick={() => {
-                setActiveModule('previewer');
+                window.open('https://wa.me/8801731182300', '_blank');
                 setIsMobileMenuOpen(false);
               }}
-              icon={<Maximize2 className="w-5 h-5" />}
-              label="Image Previewer"
+              icon={<Bug className="w-5 h-5" />}
+              label="Report a Bug"
             />
           </div>
 
-          <div className="pt-4">
-            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mb-3 px-2">System Status</div>
-            <div className="px-2 py-2 space-y-3">
-              <div className="flex justify-between items-center text-[11px] font-medium text-slate-500">
-                <span>GPU Acceleration</span>
-                <span className="text-emerald-500 font-bold uppercase">Active</span>
-              </div>
-              <div className="flex justify-between items-center text-[11px] font-medium text-slate-500">
-                <span>Gemini API</span>
-                <span className="text-emerald-500 font-bold uppercase">Stable</span>
-              </div>
-            </div>
-          </div>
         </nav>
 
         <div className="p-4">
@@ -128,7 +118,7 @@ export default function App() {
               transition={{ duration: 0.3 }}
               className="min-h-full"
             >
-              {activeModule === 'passport' ? <PassportModule /> : activeModule === 'nid' ? <NIDModule /> : <ImagePreviewer />}
+              {activeModule === 'passport' ? <PassportModule /> : <NIDModule />}
             </motion.div>
           </AnimatePresence>
         </div>

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import { cn } from '../lib/utils';
 
 interface Point {
   x: number;
@@ -164,6 +165,7 @@ export default function PerspectiveCropper({ image, onComplete, onCancel, initia
   ]);
 
   const [isWarping, setIsWarping] = useState(false);
+  const [activePoint, setActivePoint] = useState<number | null>(null);
 
   useEffect(() => {
     if (initialPoints) setPts(initialPoints);
@@ -177,6 +179,35 @@ export default function PerspectiveCropper({ image, onComplete, onCancel, initia
       { x: 15, y: 85 },
     ]);
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (activePoint === null) return;
+      
+      const step = e.shiftKey ? 1 : 0.1;
+      let dx = 0;
+      let dy = 0;
+
+      if (e.key === 'ArrowUp') dy = -step;
+      else if (e.key === 'ArrowDown') dy = step;
+      else if (e.key === 'ArrowLeft') dx = -step;
+      else if (e.key === 'ArrowRight') dx = step;
+      else return;
+
+      e.preventDefault();
+      setPts(prev => {
+        const next = [...prev];
+        next[activePoint] = {
+          x: Math.max(0, Math.min(100, next[activePoint].x + dx)),
+          y: Math.max(0, Math.min(100, next[activePoint].y + dy)),
+        };
+        return next;
+      });
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activePoint]);
 
   useEffect(() => {
     const img = new Image();
@@ -200,7 +231,8 @@ export default function PerspectiveCropper({ image, onComplete, onCancel, initia
 
   const containerRect = useRef<DOMRect | null>(null);
 
-  const handlePanStart = () => {
+  const handlePanStart = (index: number) => {
+    setActivePoint(index);
     if (containerRef.current) {
       containerRect.current = containerRef.current.getBoundingClientRect();
     }
@@ -209,6 +241,7 @@ export default function PerspectiveCropper({ image, onComplete, onCancel, initia
   const handlePointDrag = (index: number, info: any) => {
     if (!containerSize.w || !containerSize.h || !containerRect.current) return;
     
+    // Use raw pointer coordinates for better responsiveness
     const x = ((info.point.x - containerRect.current.left) / containerSize.w) * 100;
     const y = ((info.point.y - containerRect.current.top) / containerSize.h) * 100;
 
@@ -220,6 +253,35 @@ export default function PerspectiveCropper({ image, onComplete, onCancel, initia
       };
       return next;
     });
+  };
+
+  const handleQuadMove = (e: any, info: any) => {
+    if (!containerSize.w || !containerSize.h) return;
+    
+    const dx = (info.delta.x / containerSize.w) * 100;
+    const dy = (info.delta.y / containerSize.h) * 100;
+
+    setPts(prev => {
+      // Check if any point would go out of bounds
+      const canMove = prev.every(p => 
+        p.x + dx >= 0 && p.x + dx <= 100 && 
+        p.y + dy >= 0 && p.y + dy <= 100
+      );
+      
+      if (!canMove) return prev;
+      
+      return prev.map(p => ({
+        x: p.x + dx,
+        y: p.y + dy
+      }));
+    });
+  };
+
+  const handlePanEnd = () => {
+    // We keep activePoint for keyboard input until they click away? 
+    // Actually, let's keep it until they stop dragging for the loupe, 
+    // but maybe keep it selected for keyboard. 
+    // Let's keep it selected.
   };
 
   const warpedImage = async () => {
@@ -347,30 +409,68 @@ export default function PerspectiveCropper({ image, onComplete, onCancel, initia
           )}
           
           {/* SVG Overlay for Lines */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none overflow-visible">
-            <path 
+          <svg className="absolute inset-0 w-full h-full cursor-default select-none pointer-events-none overflow-visible">
+            <motion.path 
               d={polyPath} 
-              fill="rgba(59, 130, 246, 0.2)" 
+              fill={activePoint === null ? "rgba(59, 130, 246, 0.1)" : "rgba(59, 130, 246, 0.2)"} 
               stroke="#3b82f6" 
               strokeWidth="2" 
               strokeDasharray="4 4"
+              className="pointer-events-auto cursor-move"
+              onPan={handleQuadMove}
+              onTap={() => setActivePoint(null)}
             />
           </svg>
-  
+   
           {/* Draggable Markers */}
           {markers.map((m, i) => (
             <motion.div
               key={i}
-              onPanStart={handlePanStart}
+              onPanStart={() => handlePanStart(i)}
               onPan={(e, info) => handlePointDrag(i, info)}
+              onPanEnd={handlePanEnd}
+              onTap={() => setActivePoint(i)}
               style={{ 
                 left: m.x, 
                 top: m.y,
                 transform: 'translate(-50%, -50%)'
               }}
-              className="absolute w-8 h-8 bg-white border-2 border-blue-600 rounded-full shadow-2xl z-50 cursor-move flex items-center justify-center hover:scale-110 active:scale-95 transition-transform"
+              className={cn(
+                "absolute w-8 h-8 rounded-full shadow-2xl z-50 cursor-move flex items-center justify-center transition-all group",
+                activePoint === i ? "bg-blue-600 scale-110 ring-4 ring-blue-200" : "bg-white border-2 border-blue-600 hover:scale-110"
+              )}
             >
-              <div className="w-2.5 h-2.5 bg-blue-600 rounded-full" />
+              <div className={cn(
+                "w-2.5 h-2.5 rounded-full",
+                activePoint === i ? "bg-white" : "bg-blue-600"
+              )} />
+
+              {/* Magnifier / Loupe */}
+              <AnimatePresence>
+                {activePoint === i && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0, y: -20, x: -50 }}
+                    animate={{ scale: 1, opacity: 1, y: -80, x: -50 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    className="absolute left-1/2 bottom-full mb-4 w-32 h-32 rounded-full border-4 border-white shadow-2xl overflow-hidden bg-slate-900 pointer-events-none z-[100]"
+                  >
+                    <div 
+                      className="absolute inset-0"
+                      style={{
+                        backgroundImage: `url(${image})`,
+                        backgroundPosition: `${pts[i].x}% ${pts[i].y}%`,
+                        backgroundSize: `${containerSize.w * 4}px ${containerSize.h * 4}px`, // 4x zoom
+                        backgroundRepeat: 'no-repeat',
+                      }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-full h-[1px] bg-red-400/50" />
+                      <div className="h-full w-[1px] bg-red-400/50 absolute" />
+                      <div className="w-2 h-2 border border-red-500 rounded-full" />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           ))}
   
@@ -378,7 +478,10 @@ export default function PerspectiveCropper({ image, onComplete, onCancel, initia
           {markers.map((m, i) => (
             <div 
               key={`label-${i}`}
-              className="absolute text-[10px] font-bold text-white bg-blue-600 px-1 rounded pointer-events-none z-40 whitespace-nowrap"
+              className={cn(
+                "absolute text-[10px] font-bold px-1.5 py-0.5 rounded pointer-events-none z-40 whitespace-nowrap transition-colors",
+                activePoint === i ? "bg-blue-600 text-white" : "bg-white/80 text-blue-600 border border-blue-100"
+              )}
               style={{ 
                 left: m.x, 
                 top: m.y,
@@ -389,6 +492,15 @@ export default function PerspectiveCropper({ image, onComplete, onCancel, initia
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="px-4 py-2 bg-blue-50 border-t border-blue-100 flex items-center gap-3">
+        <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+          <span className="text-[10px] font-bold text-blue-600">Pro</span>
+        </div>
+        <p className="text-[11px] text-blue-700 font-medium leading-tight">
+          <span className="font-bold">Tip:</span> Drag the <span className="underline decoration-blue-300">blue area</span> to move the whole card. Select a corner and use <kbd className="bg-white px-1 py-0.5 rounded border border-blue-200">Arrow Keys</kbd> for fine adjustments.
+        </p>
       </div>
 
       <div className="p-4 sm:p-6 bg-white border-t border-slate-100 flex flex-col sm:flex-row gap-2 sm:gap-4">

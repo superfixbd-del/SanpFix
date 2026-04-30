@@ -97,7 +97,7 @@ export default function NIDModule() {
       const compressed = await compressImage(imageData);
       
       const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
@@ -197,7 +197,7 @@ export default function NIDModule() {
     try {
       const compressed = await compressImage(source);
       const response = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.5-flash-image',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
@@ -339,7 +339,7 @@ export default function NIDModule() {
         </div>
 
         {/* A4 Preview Sidebar */}
-        <aside className="w-full lg:w-80 flex flex-col gap-4 sm:gap-6 shrink-0 order-first lg:order-last">
+        <aside className="w-full lg:w-80 flex flex-col gap-4 sm:gap-6 shrink-0 order-last">
           <div className="glass-card p-4 sm:p-6 flex flex-col items-center">
             <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-6">A4 Print Canvas</h3>
             <div className="w-[210px] h-[297px] bg-white shadow-2xl border border-slate-300 p-4 flex flex-col items-center justify-center gap-3 relative overflow-hidden origin-top scale-[0.85]">

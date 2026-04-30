@@ -96,23 +96,23 @@ export default function PassportModule() {
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
-            { text: `Transform the subject in this photo into a professional studio-standard passport portrait while maintaining 100% IDENTICAL FACIAL FEATURES.
+            { text: `Transform the subject in this photo into a professional studio-standard passport portrait with 100% IDENTICAL FACIAL FEATURES.
             
-            STRICT VISUAL REQUIREMENTS (CRITICAL):
-            1. ZERO IDENTITY MORPHING: You MUST strictly preserve the person's EXACT face, eyes, nose, lips, hair texture, and unique facial structure. Do NOT apply generic beauty enhancements or morphing. The identity must be 100% recognizable as the original person.
-            2. GENDER CONSISTENCY: Maintain the original person's gender and natural appearance without adding exaggerated makeup or features.
-            3. CAMERA GAZE: The person MUST look DIRECTLY into the camera lens with a natural, professional gaze. 
-            4. STUDIO QUALITY: Apply high-end neutral studio lighting (soft-box) to create realistic depth and professional starburst catchlights.
-            5. IMAGE CLARITY: Enhance to Ultra-HD resolution while preserving natural skin pores and textures.
+            STRICT VISUAL REQUIREMENTS (MANDATORY):
+            1. ZERO IDENTITY MORPHING: You MUST strictly preserve the person's EXACT face, eyes, nose, lips, hair texture, and unique facial structure. Do NOT apply any generic beauty filters, skin thinning, or feature alterations. The identity must be 100% identical and recognizable as the original person.
+            2. GENDER & APPEARANCE CONSISTENCY: Maintain the original person's gender and natural appearance without adding any makeup or features not present in the original.
+            3. CAMERA GAZE: The person MUST look DIRECTLY into the camera lens with a natural, professional studio gaze. 
+            4. STUDIO QUALITY: Apply high-end neutral studio soft-box lighting to create realistic depth and professional catchlights.
+            5. IMAGE CLARITY: Enhance to Ultra-HD resolution while preserving natural skin pores and textures faithfully.
             6. ATTIRE: ${attireText}
             7. COMPOSITION & CROP (MANDATORY):
                - STANDARD SIZE: 40x50mm aspect ratio.
                - HEADROOM: Standard 25% space above the head.
                - CENTERING: Symmetrical horizontal and vertical alignment.
-               - CROP LIMIT: The image MUST be cropped to start from the MID-CHEST area up to the top of the head. Do not include shoulders or waist.
+               - CROP LIMIT: The image MUST be cropped from the MID-CHEST area up to the top of the head.
             8. BACKGROUND: ${bgText}
             
-            Output MUST be the resulting edited image segment in the response.` }
+            Output MUST be the resulting edited image segment only.` }
           ]
         }
       });
@@ -171,7 +171,7 @@ export default function PassportModule() {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
             { text: `Change the person's shirt color to ${color}. 
-            CRITICAL: Maintain the 100% IDENTICAL facial identity, features, and natural expression. Do NOT MORPH or enhance the face differently. Only the shirt color should change.` }
+            CRITICAL: Maintain the 100% IDENTICAL facial identity, features, and natural expression. Do NOT MORPH or enhance the face differently. IDENTITY PRESERVATION is the priority. Only the shirt color should change.` }
           ]
         }
       });
@@ -255,10 +255,8 @@ export default function PassportModule() {
             
             REQUIREMENTS:
             1. ATTIRE: Change the person's clothing to a ${styleDesc}.
-            2. IDENTITY: Preserve the EXACT face, features, and bone structure. ZERO MORPHING or beauty enhancement. The subject's appearance must remain identical to the original photo.
-            3. GAZE: Direct to camera lens.
-            
-            Output the resulting image.` }
+            2. IDENTITY: Preserve the EXACT face, features, and bone structure. ZERO MORPHING or beauty enhancement. The subject's appearance must remain 100% identical to the original photo.
+            3. GAZE: Direct to camera lens.` }
           ]
         }
       });
@@ -316,8 +314,8 @@ export default function PassportModule() {
             { text: `Professionally retouch this studio photo while keeping the person 100% IDENTICAL. 
             
             ENHANCEMENT RULES:
-            1. SKIN: Apply subtle professional skin smoothing while preserving ORIGINAL textures, features, and natural skin marks. No plastic smoothing.
-            2. IDENTITY: ZERO MORPHING. Facial structure, nose shape, and eye characteristics must remain 100% accurate.
+            1. SKIN: Apply subtle professional skin smoothing while preserving ORIGINAL textures, features, and natural skin marks. No plastic look.
+            2. IDENTITY: ZERO MORPHING. Facial structure, nose shape, and eye characteristics must remain 100% accurate. IDENTITY CONSISTENCY is the absolute priority.
             3. EYES: Enhance clarity while maintaining original gaze and shape.
             4. LIGHTING: Optimize for high-end studio lighting.` }
           ]
@@ -416,12 +414,12 @@ export default function PassportModule() {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col lg:flex-row p-2 sm:p-4 lg:p-8 gap-4 lg:gap-8">
+      <div className="flex-1 flex flex-col lg:flex-row p-1 sm:p-4 lg:p-8 gap-4 lg:gap-8 overflow-y-auto">
         {/* Preview Area */}
         <div className="flex-1 flex flex-col gap-4 sm:gap-6">
           <div 
             className={cn(
-              "relative flex-1 bg-white rounded-2xl sm:rounded-3xl border-2 border-dashed border-slate-200 shadow-sm overflow-hidden flex items-center justify-center transition-all min-h-[350px] sm:min-h-[400px] lg:min-h-[500px]",
+              "relative flex-1 bg-white rounded-xl sm:rounded-3xl border-2 border-dashed border-slate-200 shadow-sm overflow-hidden flex items-center justify-center transition-all min-h-[300px] sm:min-h-[400px] lg:min-h-[500px]",
               !image && "hover:border-blue-400 hover:bg-blue-50/50"
             )}
             {...getRootProps()}
@@ -435,20 +433,20 @@ export default function PassportModule() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-center p-6 sm:p-8"
+                  className="text-center p-4 sm:p-8"
                 >
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-slate-400" />
+                  <div className="w-10 h-10 sm:w-16 sm:h-16 bg-slate-100 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                    <Upload className="w-5 h-5 sm:w-8 sm:h-8 text-slate-400" />
                   </div>
-                  <p className="font-bold text-slate-800 text-sm sm:text-base">Upload Source Photo</p>
-                  <p className="text-xs sm:text-sm text-slate-400 mt-1">Click or drag photo to start</p>
+                  <p className="font-bold text-slate-800 text-xs sm:text-base">Upload Source Photo</p>
+                  <p className="text-[10px] sm:text-sm text-slate-400 mt-1">Click or drag photo to start</p>
                 </motion.div>
               ) : (
                 <motion.div 
                   key="preview-container"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="relative h-full w-full flex items-center justify-center bg-slate-50 p-2 sm:p-4 lg:p-6 overflow-hidden"
+                  className="relative h-full w-full flex items-center justify-center bg-slate-50 p-1 sm:p-4 lg:p-6 overflow-hidden"
                 >
                   <div className={cn(
                     "relative shadow-2xl rounded-xl overflow-hidden border border-slate-300 aspect-[4/5] w-full max-w-[280px] sm:max-w-[320px] md:max-w-md lg:h-full lg:max-h-full",
