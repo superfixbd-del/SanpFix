@@ -96,7 +96,7 @@ export default function PassportModule() {
     try {
       const compressed = await compressImage(image);
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image-preview',
+        model: 'gemini-1.5-flash',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
@@ -170,7 +170,7 @@ export default function PassportModule() {
     try {
       const compressed = await compressImage(processedImage);
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image-preview',
+        model: 'gemini-1.5-flash',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
@@ -251,7 +251,7 @@ export default function PassportModule() {
         : 'navy blue blazer with a white shirt';
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image-preview',
+        model: 'gemini-1.5-flash',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
@@ -311,7 +311,7 @@ export default function PassportModule() {
     try {
       const compressed = await compressImage(source);
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image-preview',
+        model: 'gemini-1.5-flash',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },

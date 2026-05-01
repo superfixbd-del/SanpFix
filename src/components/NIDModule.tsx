@@ -101,7 +101,7 @@ export default function NIDModule() {
       const compressed = await compressImage(imageData);
       
       const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
+        model: 'gemini-1.5-flash',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
@@ -201,7 +201,7 @@ export default function NIDModule() {
     try {
       const compressed = await compressImage(source);
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-image-preview',
+        model: 'gemini-1.5-flash',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
