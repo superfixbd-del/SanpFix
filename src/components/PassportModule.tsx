@@ -10,7 +10,7 @@ const getApiKey = () => {
   return (import.meta as any).env.VITE_GEMINI_API_KEY || (process as any).env.GEMINI_API_KEY || '';
 };
 
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 // Small helper to compress image before AI call
 async function compressImage(base64Str: string, maxWidth = 1024): Promise<string> {
@@ -95,8 +95,8 @@ export default function PassportModule() {
 
     try {
       const compressed = await compressImage(image);
-      const response = await (ai as any).models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
@@ -169,8 +169,8 @@ export default function PassportModule() {
 
     try {
       const compressed = await compressImage(processedImage);
-      const response = await (ai as any).models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
@@ -250,8 +250,8 @@ export default function PassportModule() {
         ? `professional formal ${shirtPattern === 'solid' ? 'solid-colored' : 'checkered pattern'} white button-down shirt` 
         : 'navy blue blazer with a white shirt';
 
-      const response = await (ai as any).models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
@@ -310,8 +310,8 @@ export default function PassportModule() {
     
     try {
       const compressed = await compressImage(source);
-      const response = await (ai as any).models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },

@@ -15,7 +15,7 @@ const getApiKey = () => {
   return (import.meta as any).env.VITE_GEMINI_API_KEY || (process as any).env.GEMINI_API_KEY || '';
 };
 
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 interface NIDCard {
   front: string | null;
@@ -100,8 +100,8 @@ export default function NIDModule() {
     try {
       const compressed = await compressImage(imageData);
       
-      const response = await (ai as any).models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
@@ -200,8 +200,8 @@ export default function NIDModule() {
     
     try {
       const compressed = await compressImage(source);
-      const response = await (ai as any).models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
         contents: {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
