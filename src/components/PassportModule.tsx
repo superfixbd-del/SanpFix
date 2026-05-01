@@ -10,7 +10,7 @@ const getApiKey = () => {
   return (import.meta as any).env.VITE_GEMINI_API_KEY || (process as any).env.GEMINI_API_KEY || '';
 };
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 // Small helper to compress image before AI call
 async function compressImage(base64Str: string, maxWidth = 1024): Promise<string> {
