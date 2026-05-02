@@ -5,6 +5,7 @@ import multer from 'multer';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
@@ -16,35 +17,9 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '50mb' }));
 
-// API routes go here
+// Basic health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
-});
-
-// Proxy Gemini calls to server-side to hide API key and avoid CORS
-app.post('/api/gemini', async (req, res) => {
-  try {
-    const { model, contents } = req.body;
-    const apiKey = process.env.GEMINI_API_KEY;
-    
-    if (!apiKey) {
-      return res.status(500).json({ error: 'GEMINI_API_KEY is not set on the server.' });
-    }
-
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents, generationConfig: req.body.generationConfig })
-    });
-
-    const data = await response.json();
-    res.json(data);
-  } catch (error: any) {
-    console.error('Gemini Proxy Error:', error);
-    res.status(500).json({ error: error.message });
-  }
 });
 
 // Image Processing Endpoints
@@ -78,6 +53,31 @@ app.post('/api/process-image', upload.single('image'), async (req, res) => {
   }
 });
 
+// Gemini Proxy Endpoint
+app.post('/api/gemini', async (req, res) => {
+  try {
+    const { model, contents } = req.body;
+    if (!model || !contents) {
+      return res.status(400).json({ error: 'Missing model or contents' });
+    }
+
+    const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'Gemini API key not configured on server' });
+    }
+
+    const genAI = new GoogleGenAI({ apiKey });
+    const response = await (genAI as any).models.generateContent({
+      model,
+      contents
+    });
+    res.json(response);
+  } catch (error: any) {
+    console.error('Gemini Proxy Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Error handling for entire app
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Unhandled Server Error:', err);
@@ -105,7 +105,7 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     console.log('Serving production build from dist/');
-    const distPath = path.resolve(__dirname, 'dist');
+    const distPath = path.resolve(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
       res.sendFile(path.resolve(distPath, 'index.html'));
