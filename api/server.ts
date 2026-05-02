@@ -66,12 +66,9 @@ app.post('/api/gemini', async (req, res) => {
       return res.status(500).json({ error: 'Gemini API key not configured on server' });
     }
 
-    const genAI = new GoogleGenAI({ apiKey });
-    const response = await (genAI as any).models.generateContent({
-      model,
-      contents
-    });
-    res.json(response);
+    const response = await (genAI as any).getGenerativeModel({ model }).generateContent(contents);
+    const responseData = await response.response;
+    res.json(responseData);
   } catch (error: any) {
     console.error('Gemini Proxy Error:', error);
     res.status(500).json({ error: error.message });

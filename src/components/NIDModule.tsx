@@ -100,27 +100,24 @@ export default function NIDModule() {
     try {
       const compressed = await compressImage(imageData);
       
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: {
-          parts: [
-            { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
-            { text: `Locate the Bangladesh National ID (NID) card in this photo. 
-            
-            SPECIFIC INSTRUCTIONS:
-            1. Identify the exact four corner points of the physical card, ignoring any background, hands, or surrounding clutter.
-            2. The card is a rectangle. Ensure the points follow the card's actual physical edges.
-            3. Return only a JSON object with keys "tl", "tr", "br", "bl" for Top-Left, Top-Right, Bottom-Right, and Bottom-Left respectively.
-            4. Each value must be an [x, y] array where x and y are percentages (0-100) of the total image width and height.
-            
-            Example output: {"tl": [10.5, 20.1], "tr": [89.2, 21.5], "br": [88.5, 78.2], "bl": [11.2, 79.5]}
-            
-            Return ONLY the valid JSON.` }
-          ]
-        }
+      const response = await generateContentViaProxy(GEMINI_MODEL, {
+        parts: [
+          { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
+          { text: `Locate the Bangladesh National ID (NID) card in this photo. 
+          
+          SPECIFIC INSTRUCTIONS:
+          1. Identify the exact four corner points of the physical card, ignoring any background, hands, or surrounding clutter.
+          2. The card is a rectangle. Ensure the points follow the card's actual physical edges.
+          3. Return only a JSON object with keys "tl", "tr", "br", "bl" for Top-Left, Top-Right, Bottom-Right, and Bottom-Left respectively.
+          4. Each value must be an [x, y] array where x and y are percentages (0-100) of the total image width and height.
+          
+          Example output: {"tl": [10.5, 20.1], "tr": [89.2, 21.5], "br": [88.5, 78.2], "bl": [11.2, 79.5]}
+          
+          Return ONLY the valid JSON.` }
+        ]
       });
 
-      const responseText = response.text || '';
+      const responseText = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
       const jsonMatch = responseText.match(/\{.*\}/s);
       if (!jsonMatch) throw new Error('AI could not locate the card corner points.');
       
@@ -200,14 +197,11 @@ export default function NIDModule() {
     
     try {
       const compressed = await compressImage(source);
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-          parts: [
-            { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
-            { text: "Enhance this NID card image. Improve clarity, sharpen text, normalize exposure, and remove background color noise. Output ONLY the resulting high-quality image data part." }
-          ]
-        }
+      const response = await generateContentViaProxy(GEMINI_MODEL, {
+        parts: [
+          { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
+          { text: "Enhance this NID card image. Improve clarity, sharpen text, normalize exposure, and remove background color noise. Output ONLY the resulting high-quality image data part." }
+        ]
       });
 
       const parts = response.candidates?.[0]?.content?.parts || [];
