@@ -10,7 +10,21 @@ const getApiKey = () => {
   return (import.meta as any).env.VITE_GEMINI_API_KEY || (process as any).env.GEMINI_API_KEY || '';
 };
 
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
+const callGemini = async (model: string, contents: any) => {
+  // Use proxy in production to avoid CORS and hide key
+  const response = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, contents })
+  });
+  
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Gemini API Error');
+  }
+  
+  return response.json();
+};
 
 // Small helper to compress image before AI call
 async function compressImage(base64Str: string, maxWidth = 1024): Promise<string> {
@@ -21,12 +35,10 @@ async function compressImage(base64Str: string, maxWidth = 1024): Promise<string
       const canvas = document.createElement('canvas');
       let width = img.width;
       let height = img.height;
-      
       if (width > maxWidth) {
         height = (maxWidth / width) * height;
         width = maxWidth;
       }
-      
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext('2d');
@@ -95,9 +107,7 @@ export default function PassportModule() {
 
     try {
       const compressed = await compressImage(image);
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
+      const data = await callGemini('gemini-1.5-flash', {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
             { text: `Transform the subject in this photo into a professional studio-standard passport portrait with 100% IDENTICAL FACIAL FEATURES.
@@ -118,14 +128,13 @@ export default function PassportModule() {
             
             Output MUST be the resulting edited image segment only.` }
           ]
-        }
       });
 
-      if (!response.candidates?.[0]?.content?.parts) {
+      if (!data.candidates?.[0]?.content?.parts) {
         throw new Error('AI could not process the photo. Please try a clearer picture.');
       }
 
-      for (const part of response.candidates[0].content.parts) {
+      for (const part of data.candidates[0].content.parts) {
         if (part.inlineData) {
           const aiBase64 = `data:image/png;base64,${part.inlineData.data}`;
           setProcessedImage(aiBase64);
@@ -169,22 +178,19 @@ export default function PassportModule() {
 
     try {
       const compressed = await compressImage(processedImage);
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
+      const data = await callGemini('gemini-1.5-flash', {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
             { text: `Change the person's shirt color to ${color}. 
             CRITICAL: Maintain the 100% IDENTICAL facial identity, features, and natural expression. Do NOT MORPH or enhance the face differently. IDENTITY PRESERVATION is the priority. Only the shirt color should change.` }
           ]
-        }
       });
 
-      if (!response.candidates?.[0]?.content?.parts) {
+      if (!data.candidates?.[0]?.content?.parts) {
         throw new Error('AI could not recolor the shirt.');
       }
 
-      for (const part of response.candidates[0].content.parts) {
+      for (const part of data.candidates[0].content.parts) {
         if (part.inlineData) {
           const aiBase64 = `data:image/png;base64,${part.inlineData.data}`;
           setProcessedImage(aiBase64);
@@ -250,9 +256,7 @@ export default function PassportModule() {
         ? `professional formal ${shirtPattern === 'solid' ? 'solid-colored' : 'checkered pattern'} white button-down shirt` 
         : 'navy blue blazer with a white shirt';
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
+      const data = await callGemini('gemini-1.5-flash', {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
             { text: `Edit this professional studio portrait with 100% IDENTITY PRESERVATION.
@@ -262,14 +266,13 @@ export default function PassportModule() {
             2. IDENTITY: Preserve the EXACT face, features, and bone structure. ZERO MORPHING or beauty enhancement. The subject's appearance must remain 100% identical to the original photo.
             3. GAZE: Direct to camera lens.` }
           ]
-        }
       });
 
-      if (!response.candidates?.[0]?.content?.parts) {
+      if (!data.candidates?.[0]?.content?.parts) {
         throw new Error('AI could not swap attire');
       }
 
-      for (const part of response.candidates[0].content.parts) {
+      for (const part of data.candidates[0].content.parts) {
         if (part.inlineData) {
           const aiBase64 = `data:image/png;base64,${part.inlineData.data}`;
           setProcessedImage(aiBase64);
@@ -310,9 +313,7 @@ export default function PassportModule() {
     
     try {
       const compressed = await compressImage(source);
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
+      const data = await callGemini('gemini-1.5-flash', {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
             { text: `Professionally retouch this studio photo while keeping the person 100% IDENTICAL. 
@@ -323,14 +324,13 @@ export default function PassportModule() {
             3. EYES: Enhance clarity while maintaining original gaze and shape.
             4. LIGHTING: Optimize for high-end studio lighting.` }
           ]
-        }
       });
 
-      if (!response.candidates?.[0]?.content?.parts) {
+      if (!data.candidates?.[0]?.content?.parts) {
         throw new Error('AI could not refine skin');
       }
 
-      for (const part of response.candidates[0].content.parts) {
+      for (const part of data.candidates[0].content.parts) {
         if (part.inlineData) {
           const aiBase64 = `data:image/png;base64,${part.inlineData.data}`;
           setProcessedImage(aiBase64);

@@ -15,7 +15,18 @@ const getApiKey = () => {
   return (import.meta as any).env.VITE_GEMINI_API_KEY || (process as any).env.GEMINI_API_KEY || '';
 };
 
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
+const callGemini = async (model: string, contents: any) => {
+  const response = await fetch('/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, contents })
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Gemini API Error');
+  }
+  return response.json();
+};
 
 interface NIDCard {
   front: string | null;
@@ -100,9 +111,7 @@ export default function NIDModule() {
     try {
       const compressed = await compressImage(imageData);
       
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: {
+      const data = await callGemini('gemini-2.0-flash', {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
             { text: `Locate the Bangladesh National ID (NID) card in this photo. 
@@ -117,10 +126,9 @@ export default function NIDModule() {
             
             Return ONLY the valid JSON.` }
           ]
-        }
       });
 
-      const responseText = response.text || '';
+      const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       const jsonMatch = responseText.match(/\{.*\}/s);
       if (!jsonMatch) throw new Error('AI could not locate the card corner points.');
       
@@ -200,17 +208,14 @@ export default function NIDModule() {
     
     try {
       const compressed = await compressImage(source);
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
+      const data = await callGemini('gemini-1.5-flash', {
           parts: [
             { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
             { text: "Enhance this NID card image. Improve clarity, sharpen text, normalize exposure, and remove background color noise. Output ONLY the resulting high-quality image data part." }
           ]
-        }
       });
 
-      const parts = response.candidates?.[0]?.content?.parts || [];
+      const parts = data.candidates?.[0]?.content?.parts || [];
       for (const part of parts) {
         if (part.inlineData) {
           const enhanced = `data:image/png;base64,${part.inlineData.data}`;

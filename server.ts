@@ -16,9 +16,35 @@ const PORT = 3000;
 
 app.use(express.json({ limit: '50mb' }));
 
-// Basic health check
+// API routes go here
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
+// Proxy Gemini calls to server-side to hide API key and avoid CORS
+app.post('/api/gemini', async (req, res) => {
+  try {
+    const { model, contents } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
+    
+    if (!apiKey) {
+      return res.status(500).json({ error: 'GEMINI_API_KEY is not set on the server.' });
+    }
+
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents, generationConfig: req.body.generationConfig })
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error: any) {
+    console.error('Gemini Proxy Error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Image Processing Endpoints
