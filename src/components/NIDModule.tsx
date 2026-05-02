@@ -11,11 +11,9 @@ import PerspectiveCropper from './PerspectiveCropper';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
-const getApiKey = () => {
-  return (import.meta as any).env.VITE_GEMINI_API_KEY || (process as any).env.GEMINI_API_KEY || '';
-};
-
-const ai = new GoogleGenAI({ apiKey: getApiKey() });
+const ai = new GoogleGenAI({ apiKey: (process as any).env.GEMINI_API_KEY });
+const TEXT_MODEL = 'gemini-3-flash-preview';
+const IMAGE_MODEL = 'gemini-2.5-flash-image';
 
 interface NIDCard {
   front: string | null;
@@ -100,8 +98,9 @@ export default function NIDModule() {
     try {
       const compressed = await compressImage(imageData);
       
-      const response = await generateContentViaProxy(GEMINI_MODEL, {
-        parts: [
+      const response = await ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: [
           { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
           { text: `Locate the Bangladesh National ID (NID) card in this photo. 
           
@@ -117,7 +116,7 @@ export default function NIDModule() {
         ]
       });
 
-      const responseText = response.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const responseText = response.text || '';
       const jsonMatch = responseText.match(/\{.*\}/s);
       if (!jsonMatch) throw new Error('AI could not locate the card corner points.');
       
@@ -197,8 +196,9 @@ export default function NIDModule() {
     
     try {
       const compressed = await compressImage(source);
-      const response = await generateContentViaProxy(GEMINI_MODEL, {
-        parts: [
+      const response = await ai.models.generateContent({
+        model: IMAGE_MODEL,
+        contents: [
           { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
           { text: "Enhance this NID card image. Improve clarity, sharpen text, normalize exposure, and remove background color noise. Output ONLY the resulting high-quality image data part." }
         ]

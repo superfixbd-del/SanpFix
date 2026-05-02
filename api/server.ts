@@ -5,7 +5,6 @@ import multer from 'multer';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
-import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
@@ -49,28 +48,6 @@ app.post('/api/process-image', upload.single('image'), async (req, res) => {
     res.send(buffer);
   } catch (error: any) {
     console.error('Sharp processing error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Gemini Proxy Endpoint
-app.post('/api/gemini', async (req, res) => {
-  try {
-    const { model, contents } = req.body;
-    if (!model || !contents) {
-      return res.status(400).json({ error: 'Missing model or contents' });
-    }
-
-    const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      return res.status(500).json({ error: 'Gemini API key not configured on server' });
-    }
-
-    const response = await (genAI as any).getGenerativeModel({ model }).generateContent(contents);
-    const responseData = await response.response;
-    res.json(responseData);
-  } catch (error: any) {
-    console.error('Gemini Proxy Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
