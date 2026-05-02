@@ -2,11 +2,10 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { removeBackground } from '@imgly/background-removal';
 import { Upload, Trash2, Download, Sun, Droplets, Palette, Shirt, RefreshCw, Check, AlertCircle, Sparkles } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import { callGeminiWithRetry } from '../services/geminiService';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
-const ai = new GoogleGenAI({ apiKey: (process as any).env.GEMINI_API_KEY });
 const IMAGE_MODEL = 'gemini-2.5-flash-image';
 
 // Small helper to compress image before AI call
@@ -89,30 +88,27 @@ export default function PassportModule() {
 
     try {
       const compressed = await compressImage(image);
-      const response = await ai.models.generateContent({
-        model: IMAGE_MODEL,
-        contents: {
-          parts: [
-            { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
-            { text: `Transform the subject in this photo into a professional studio-standard passport portrait with 100% IDENTICAL FACIAL FEATURES.
-            
-            STRICT VISUAL REQUIREMENTS (MANDATORY):
-            1. ZERO IDENTITY MORPHING: You MUST strictly preserve the person's EXACT face, eyes, nose, lips, hair texture, and unique facial structure. Do NOT apply any generic beauty filters, skin thinning, or feature alterations. The identity must be 100% identical and recognizable as the original person.
-            2. GENDER & APPEARANCE CONSISTENCY: Maintain the original person's gender and natural appearance without adding any makeup or features not present in the original.
-            3. CAMERA GAZE: The person MUST look DIRECTLY into the camera lens with a natural, professional studio gaze. 
-            4. STUDIO QUALITY: Apply high-end neutral studio soft-box lighting to create realistic depth and professional catchlights.
-            5. IMAGE CLARITY: Enhance to Ultra-HD resolution while preserving natural skin pores and textures faithfully.
-            6. ATTIRE: ${attireText}
-            7. COMPOSITION & CROP (MANDATORY):
-               - STANDARD SIZE: 40x50mm aspect ratio.
-               - HEADROOM: Standard 25% space above the head.
-               - CENTERING: Symmetrical horizontal and vertical alignment.
-               - CROP LIMIT: The image MUST be cropped from the MID-CHEST area up to the top of the head.
-            8. BACKGROUND: ${bgText}
-            
-            Output MUST be the resulting edited image segment only.` }
-          ]
-        }
+      const response = await callGeminiWithRetry(IMAGE_MODEL, {
+        parts: [
+          { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
+          { text: `Transform the subject in this photo into a professional studio-standard passport portrait with 100% IDENTICAL FACIAL FEATURES.
+          
+          STRICT VISUAL REQUIREMENTS (MANDATORY):
+          1. ZERO IDENTITY MORPHING: You MUST strictly preserve the person's EXACT face, eyes, nose, lips, hair texture, and unique facial structure. Do NOT apply any generic beauty filters, skin thinning, or feature alterations. The identity must be 100% identical and recognizable as the original person.
+          2. GENDER & APPEARANCE CONSISTENCY: Maintain the original person's gender and natural appearance without adding any makeup or features not present in the original.
+          3. CAMERA GAZE: The person MUST look DIRECTLY into the camera lens with a natural, professional studio gaze. 
+          4. STUDIO QUALITY: Apply high-end neutral studio soft-box lighting to create realistic depth and professional catchlights.
+          5. IMAGE CLARITY: Enhance to Ultra-HD resolution while preserving natural skin pores and textures faithfully.
+          6. ATTIRE: ${attireText}
+          7. COMPOSITION & CROP (MANDATORY):
+             - STANDARD SIZE: 40x50mm aspect ratio.
+             - HEADROOM: Standard 25% space above the head.
+             - CENTERING: Symmetrical horizontal and vertical alignment.
+             - CROP LIMIT: The image MUST be cropped from the MID-CHEST area up to the top of the head.
+          8. BACKGROUND: ${bgText}
+          
+          Output MUST be the resulting edited image segment only.` }
+        ]
       });
 
       if (!response.candidates?.[0]?.content?.parts) {
@@ -163,15 +159,12 @@ export default function PassportModule() {
 
     try {
       const compressed = await compressImage(processedImage);
-      const response = await ai.models.generateContent({
-        model: IMAGE_MODEL,
-        contents: {
-          parts: [
-            { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
-            { text: `Change the person's shirt color to ${color}. 
-            CRITICAL: Maintain the 100% IDENTICAL facial identity, features, and natural expression. Do NOT MORPH or enhance the face differently. IDENTITY PRESERVATION is the priority. Only the shirt color should change.` }
-          ]
-        }
+      const response = await callGeminiWithRetry(IMAGE_MODEL, {
+        parts: [
+          { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
+          { text: `Change the person's shirt color to ${color}. 
+          CRITICAL: Maintain the 100% IDENTICAL facial identity, features, and natural expression. Do NOT MORPH or enhance the face differently. IDENTITY PRESERVATION is the priority. Only the shirt color should change.` }
+        ]
       });
 
       if (!response.candidates?.[0]?.content?.parts) {
@@ -244,19 +237,16 @@ export default function PassportModule() {
         ? `professional formal ${shirtPattern === 'solid' ? 'solid-colored' : 'checkered pattern'} white button-down shirt` 
         : 'navy blue blazer with a white shirt';
 
-      const response = await ai.models.generateContent({
-        model: IMAGE_MODEL,
-        contents: {
-          parts: [
-            { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
-            { text: `Edit this professional studio portrait with 100% IDENTITY PRESERVATION.
-            
-            REQUIREMENTS:
-            1. ATTIRE: Change the person's clothing to a ${styleDesc}.
-            2. IDENTITY: Preserve the EXACT face, features, and bone structure. ZERO MORPHING or beauty enhancement. The subject's appearance must remain 100% identical to the original photo.
-            3. GAZE: Direct to camera lens.` }
-          ]
-        }
+      const response = await callGeminiWithRetry(IMAGE_MODEL, {
+        parts: [
+          { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
+          { text: `Edit this professional studio portrait with 100% IDENTITY PRESERVATION.
+          
+          REQUIREMENTS:
+          1. ATTIRE: Change the person's clothing to a ${styleDesc}.
+          2. IDENTITY: Preserve the EXACT face, features, and bone structure. ZERO MORPHING or beauty enhancement. The subject's appearance must remain 100% identical to the original photo.
+          3. GAZE: Direct to camera lens.` }
+        ]
       });
 
       if (!response.candidates?.[0]?.content?.parts) {
@@ -304,20 +294,17 @@ export default function PassportModule() {
     
     try {
       const compressed = await compressImage(source);
-      const response = await ai.models.generateContent({
-        model: IMAGE_MODEL,
-        contents: {
-          parts: [
-            { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
-            { text: `Professionally retouch this studio photo while keeping the person 100% IDENTICAL. 
-            
-            ENHANCEMENT RULES:
-            1. SKIN: Apply subtle professional skin smoothing while preserving ORIGINAL textures, features, and natural skin marks. No plastic look.
-            2. IDENTITY: ZERO MORPHING. Facial structure, nose shape, and eye characteristics must remain 100% accurate. IDENTITY CONSISTENCY is the absolute priority.
-            3. EYES: Enhance clarity while maintaining original gaze and shape.
-            4. LIGHTING: Optimize for high-end studio lighting.` }
-          ]
-        }
+      const response = await callGeminiWithRetry(IMAGE_MODEL, {
+        parts: [
+          { inlineData: { data: compressed.split(',')[1], mimeType: 'image/jpeg' } },
+          { text: `Professionally retouch this studio photo while keeping the person 100% IDENTICAL. 
+          
+          ENHANCEMENT RULES:
+          1. SKIN: Apply subtle professional skin smoothing while preserving ORIGINAL textures, features, and natural skin marks. No plastic look.
+          2. IDENTITY: ZERO MORPHING. Facial structure, nose shape, and eye characteristics must remain 100% accurate. IDENTITY CONSISTENCY is the absolute priority.
+          3. EYES: Enhance clarity while maintaining original gaze and shape.
+          4. LIGHTING: Optimize for high-end studio lighting.` }
+        ]
       });
 
       if (!response.candidates?.[0]?.content?.parts) {
